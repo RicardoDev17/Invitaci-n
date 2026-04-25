@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Primera Comunión · Mario Alejandro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- ══ CANVAS DE PARTÍCULAS ══ -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- ══ PALOMA SVG ANIMADA ══ -->
+  <div id="doveWrapper">
+    <svg id="doveSvg" viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- Cuerpo -->
+      <ellipse cx="60" cy="46" rx="22" ry="13" fill="white" opacity="0.95"/>
+      <!-- Cabeza -->
+      <circle cx="82" cy="38" r="9" fill="white" opacity="0.95"/>
+      <!-- Pico -->
+      <polygon points="91,37 99,35 91,40" fill="#e8c87a"/>
+      <!-- Ojo -->
+      <circle cx="85" cy="36" r="2" fill="#3a5a8c"/>
+      <circle cx="85.6" cy="35.4" r="0.6" fill="white"/>
+      <!-- Ala izquierda (anima) -->
+      <path id="wingLeft" d="M60,46 Q30,20 10,30 Q35,50 60,48" fill="white" opacity="0.9"/>
+      <!-- Ala derecha (anima) -->
+      <path id="wingRight" d="M62,46 Q90,25 110,35 Q88,52 62,48" fill="#f0ece0" opacity="0.85"/>
+      <!-- Cola -->
+      <path d="M38,48 Q25,55 20,65 Q32,56 42,52 Q30,62 28,72 Q40,58 48,54" fill="white" opacity="0.9"/>
+      <!-- Rama de olivo -->
+      <path d="M91,41 Q96,46 100,50" stroke="#7a9a5a" stroke-width="1.5" fill="none"/>
+      <ellipse cx="101" cy="49" rx="4" ry="2.5" fill="#8ab86a" transform="rotate(-30,101,49)"/>
+      <ellipse cx="98" cy="52" rx="3.5" ry="2" fill="#6da050" transform="rotate(20,98,52)"/>
+      <ellipse cx="103" cy="53" rx="3" ry="2" fill="#8ab86a" transform="rotate(-10,103,53)"/>
+    </svg>
+  </div>
+
+  <!-- ══ CONTROL DE MÚSICA ══ -->
+  <button id="musicBtn" title="Reproducir/Pausar música">
+    <span id="musicIcon">♪</span>
+    <span id="musicLabel">Música</span>
+  </button>
+
+  <!-- ══ AUDIO (música instrumental religiosa via Web Audio API) ══ -->
+  <!-- La música se genera con Web Audio API en index.js, no requiere archivo externo -->
+
+  <!-- ══ HERO ══ -->
+  <div class="hero">
+    <div class="cross-top">✦ ✝ ✦</div>
+
+    <div class="divider-ornament">
+      <span>✦</span>
+      <span class="divider-text">Con la gracia de Dios</span>
+      <span>✦</span>
+    </div>
+
+    <p class="hero-subtitle">Tiene el honor de invitarle a celebrar su</p>
+
+    <h1 class="hero-name">
+      <em>Mario Alejandro</em><br>Pérez Arias
+    </h1>
+
+    <p class="hero-communion-title">Primera Sagrada Comunión</p>
+
+    <div class="hero-date-badge">
+      <span class="day">20</span>
+      <span class="month">Junio</span>
+      <span class="year">2025</span>
+    </div>
+
+    <div class="divider-ornament hero-divider-bottom">
+      <span>✦</span><span>✦</span>
+    </div>
+
+    <div class="scroll-hint">
+      <span>Ver detalles</span>
+      <div class="arrow"></div>
+    </div>
+  </div>
+
+  <!-- ══ HORARIO ══ -->
+  <section class="reveal">
+    <span class="section-label">Programa del día</span>
+    <h2 class="section-title">Itinerario</h2>
+    <div class="gold-rule"></div>
+
+    <div class="timeline-wrap">
+      <div class="timeline-event">
+        <div class="timeline-time blue-time">
+          12:00<span class="ampm">PM</span>
+        </div>
+        <div class="timeline-info">
+          <h3>⛪ Ceremonia Religiosa</h3>
+          <p>Santuario de la Virgen de Guadalupe<br>Santa Misa de Primera Comunión</p>
+        </div>
+      </div>
+      <div class="timeline-event">
+        <div class="timeline-time gold-time">
+          2:30<span class="ampm dark-ampm">PM</span>
+        </div>
+        <div class="timeline-info">
+          <h3>🎉 Recepción &amp; Festejo</h3>
+          <p>Salón La Puerta · San Judas Tadeo #204<br>Col. Las Flores (Ciudad Perdida)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider">✦ ✦ ✦</div>
+
+  <!-- ══ FAMILIA ══ -->
+  <section class="reveal">
+    <span class="section-label">Con el amor de</span>
+    <h2 class="section-title">Familia</h2>
+    <div class="gold-rule"></div>
+
+    <div class="family-grid">
+      <div class="family-card">
+        <span class="role">Sus Padres</span>
+        <div class="names">
+          María Guadalupe Arias Romo<br>&amp;<br>
+          Mario Alberto Pérez Aguirre
+        </div>
+      </div>
+      <div class="family-card">
+        <span class="role">Sus Padrinos</span>
+        <div class="names">
+          Raúl Arias Romo<br>&amp;<br>
+          Silvia Pedroza Cuéllar
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="full-divider">✦ ✦ ✦</div>
+
+  <!-- ══ UBICACIÓN ══ -->
+  <section class="reveal">
+    <span class="section-label">Dónde celebramos</span>
+    <h2 class="section-title">Ubicación del Festejo</h2>
+    <div class="gold-rule"></div>
+
+    <div class="map-container">
+      <div class="map-header">
+        <div>
+          <h3>Salón La Puerta</h3>
+          <p>San Judas Tadeo #204 · Col. Las Flores (Ciudad Perdida)</p>
+        </div>
+        <a href="https://maps.app.goo.gl/QAi3GMoLdi1Nhtr98?g_st=iw" target="_blank" rel="noopener" class="map-btn">
+          📍 Abrir en Google Maps
+        </a>
+      </div>
+      <iframe
+        class="map-embed"
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.5!2d-102.0418!3d21.5206!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x842382c5e0a3ed23%3A0x7d3c2d2b1ea7af1e!2sEncarnaci%C3%B3n%20de%20D%C3%ADaz%2C%20Jal.!5e0!3m2!1ses!2smx!4v1700000000000!5m2!1ses!2smx"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Salón La Puerta – San Judas Tadeo 204, Col. Las Flores">
+      </iframe>
+    </div>
+
+    <p class="map-hint">
+      ¿Problemas con el mapa?
+      <a href="https://maps.app.goo.gl/QAi3GMoLdi1Nhtr98?g_st=iw" target="_blank">Toca aquí para abrir en Google Maps</a>
+    </p>
+  </section>
+
+  <!-- ══ RSVP ══ -->
+  <div class="rsvp-section reveal">
+    <div class="rsvp-inner">
+      <span class="section-label rsvp-label">Confirmación de asistencia</span>
+      <h2 class="section-title rsvp-title">¿Nos acompañas?</h2>
+      <div class="gold-rule rsvp-rule"></div>
+
+      <form class="rsvp-form" id="rsvpForm">
+        <div class="form-group">
+          <label for="familyName">Nombre de familia</label>
+          <input type="text" id="familyName" name="familyName" placeholder="Ej. Familia Rodríguez López" required>
+        </div>
+        <div class="form-group">
+          <label for="guestCount">Número de asistentes</label>
+          <select id="guestCount" name="guestCount">
+            <option value="1">1 persona</option>
+            <option value="2">2 personas</option>
+            <option value="3">3 personas</option>
+            <option value="4">4 personas</option>
+            <option value="5">5 personas</option>
+            <option value="6">6 personas</option>
+            <option value="7">7 personas</option>
+            <option value="8">8 personas</option>
+            <option value="9">9 personas</option>
+            <option value="10">10 personas</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-confirm">Confirmar Asistencia</button>
+      </form>
+      <div class="rsvp-message" id="rsvpMessage"></div>
+    </div>
+  </div>
+
+  <!-- ══ ADMIN BAR ══ -->
+  <div class="admin-bar" id="adminBar">
+    <span>⚙ Acceso administrador</span>
+  </div>
+
+  <!-- ══ MODAL ADMIN ══ -->
+  <div class="admin-modal-overlay" id="adminOverlay">
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2>Panel de Administrador</h2>
+        <button class="modal-close" id="modalCloseBtn">✕</button>
+      </div>
+      <div class="admin-modal-body">
+
+        <!-- LOGIN -->
+        <div id="adminLogin">
+          <div class="admin-login-wrap">
+            <label for="adminPass">Contraseña de acceso</label>
+            <input type="password" id="adminPass" placeholder="••••••••">
+            <button class="btn-admin-enter" id="adminEnterBtn">Ingresar</button>
+            <p class="admin-error" id="adminError">Contraseña incorrecta. Inténtalo de nuevo.</p>
+          </div>
+        </div>
+
+        <!-- LISTA CONFIRMADOS -->
+        <div id="adminPanel" style="display:none;">
+          <div class="guest-list-header">
+            <h3>Familias Confirmadas</h3>
+            <div class="total-badge" id="totalBadge">Total: 0 invitados</div>
+          </div>
+          <div id="guestListWrap"></div>
+          <div style="text-align:right;margin-top:16px;">
+            <button class="btn-admin-logout" id="adminLogoutBtn">Cerrar sesión</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <footer>
+    <p>✦ &nbsp; "Dejad que los niños vengan a mí, porque de ellos es el Reino de los Cielos." &nbsp; ✦</p>
+    <p class="footer-sub">MARIO ALEJANDRO · PRIMERA COMUNIÓN · 20 DE JUNIO</p>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>
