@@ -321,7 +321,7 @@ function burstPetals(n) {
 //  6. PANEL ADMIN
 // ══════════════════════════════════════════
 
-const ADMIN_PASSWORD = 'mario2025'; // ← Cambia aquí tu contraseña
+const ADMIN_PASSWORD = 'mario2026'; // ← Cambia aquí tu contraseña
 let adminAuth = false;
 
 // Abrir modal
