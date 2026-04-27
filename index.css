@@ -180,13 +180,26 @@ body {
 }
 
 .cross-top {
-  font-size: 2.2rem;
-  color: var(--gold);
-  letter-spacing: 0.3em;
+  display: flex;
+  align-items: center;
+  gap: 18px;
   animation: fadeDown 1s ease both;
-  text-shadow: 0 2px 12px rgba(201,168,76,0.5);
   position: relative;
   z-index: 1;
+}
+
+.cross-ornament {
+  font-size: 1.1rem;
+  color: var(--gold);
+  text-shadow: 0 2px 8px rgba(201,168,76,0.5);
+  line-height: 1;
+}
+
+.cross-svg {
+  width: 28px;
+  height: 44px;
+  color: var(--gold);
+  filter: drop-shadow(0 2px 8px rgba(201,168,76,0.55));
 }
 
 .divider-ornament {

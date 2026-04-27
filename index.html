@@ -49,7 +49,15 @@
 
   <!-- ══ HERO ══ -->
   <div class="hero">
-    <div class="cross-top">✦ ✝ ✦</div>
+    <div class="cross-top">
+      <span class="cross-ornament">✦</span>
+      <svg class="cross-svg" viewBox="0 0 50 80" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="0"  width="10" height="80" rx="2" fill="currentColor"/>
+        <rect x="0"  y="22" width="50" height="10" rx="2" fill="currentColor"/>
+        <rect x="16" y="68" width="18" height="12"  rx="2" fill="currentColor"/>
+      </svg>
+      <span class="cross-ornament">✦</span>
+    </div>
 
     <div class="divider-ornament">
       <span>✦</span>
@@ -58,12 +66,12 @@
     </div>
 
     <p class="hero-subtitle">Tiene el honor de invitarle a celebrar su</p>
-    <p class="hero-communion-title">Primera Comunión</p>
 
     <h1 class="hero-name">
       <em>Mario Alejandro</em><br>Pérez Arias
     </h1>
 
+    <p class="hero-communion-title">Primera Sagrada Comunión</p>
 
     <div class="hero-date-badge">
       <span class="day">20</span>
@@ -73,6 +81,11 @@
 
     <div class="divider-ornament hero-divider-bottom">
       <span>✦</span><span>✦</span>
+    </div>
+
+    <div class="scroll-hint">
+      <span>Ver detalles</span>
+      <div class="arrow"></div>
     </div>
   </div>
 
@@ -243,6 +256,7 @@
     <p class="footer-sub">MARIO ALEJANDRO · PRIMERA COMUNIÓN · 20 DE JUNIO</p>
   </footer>
 
-  <script src="index.js"></script>
+  <!-- ══ FIREBASE SDK ══ -->
+  <script type="module" src="index.js"></script>
 </body>
 </html>
