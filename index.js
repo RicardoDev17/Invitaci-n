@@ -278,7 +278,7 @@ function burstPetals(n) {
 //  6. PANEL ADMIN — lee Firebase en tiempo real
 // ══════════════════════════════════════════
 
-const ADMIN_PASSWORD = 'mario2025'; // ← Cambia aquí tu contraseña
+const ADMIN_PASSWORD = 'mario2026'; // ← Cambia aquí tu contraseña
 let adminAuth        = false;
 let rsvpUnsubscribe  = null;
 
@@ -442,11 +442,11 @@ function renderAdminTable() {
     const color   = tableColor(x.mesa);
     const mesaVal = x.mesa || '';
     return `<tr>
-      <td class="td-num">${i + 1}</td>
-      <td class="td-name">${escapeHtml(x.name)}</td>
-      <td><span class="guest-count">${x.count}</span></td>
-      <td class="td-fecha">${fecha}</td>
-      <td class="td-mesa">
+      <td class="td-num" data-label="#">${i + 1}</td>
+      <td class="td-name" data-label="Familia">${escapeHtml(x.name)}</td>
+      <td class="td-count" data-label="Asist."><span class="guest-count">${x.count}</span></td>
+      <td class="td-fecha" data-label="Fecha">${fecha}</td>
+      <td class="td-mesa" data-label="Mesa">
         <div class="mesa-wrap">
           ${x.mesa
             ? `<span class="mesa-badge" style="background:${color}">Mesa ${x.mesa}</span>`
