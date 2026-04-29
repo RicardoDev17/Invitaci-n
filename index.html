@@ -38,14 +38,14 @@
     </svg>
   </div>
 
+  <!-- ══ AUDIO LOCAL ══ -->
+  <audio id="bgAudio" src="song.mp3" loop preload="auto"></audio>
+
   <!-- ══ CONTROL DE MÚSICA ══ -->
   <button id="musicBtn" title="Reproducir/Pausar música">
     <span id="musicIcon">♪</span>
     <span id="musicLabel">Música</span>
   </button>
-
-  <!-- ══ AUDIO (música instrumental religiosa via Web Audio API) ══ -->
-  <!-- La música se genera con Web Audio API en index.js, no requiere archivo externo -->
 
   <!-- ══ HERO ══ -->
   <div class="hero">
@@ -65,24 +65,38 @@
       <span>✦</span>
     </div>
 
-    <p class="hero-subtitle">Tiene el honor de invitarle a celebrar su</p>
+    <p class="hero-subtitle">Tengo el honor de invitarle a celebrar</p>
+
+    <p class="hero-communion-title-small">✦ &nbsp; Mi &nbsp; ✦</p>
+    <p class="hero-communion-title">Sagrada Primera<br>Comunión</p>
 
     <h1 class="hero-name">
-      <em>Mario Alejandro</em><br>Pérez Arias
+      <em>Mario Alejandro</em>
     </h1>
-
-    <p class="hero-communion-title">Primera Sagrada Comunión</p>
 
     <div class="hero-date-badge">
       <span class="day">20</span>
       <span class="month">Junio</span>
-      <span class="year">2025</span>
+      <span class="year">2026</span>
     </div>
 
     <div class="divider-ornament hero-divider-bottom">
       <span>✦</span><span>✦</span>
     </div>
   </div>
+
+  <!-- ══ ORACIÓN INICIAL ══ -->
+  <section class="prayer-section reveal">
+    <div class="prayer-ornament">✦</div>
+    <p class="prayer-text">
+      Jesús mío, que hoy vienes a mí por primera vez,<br>
+      ilumina mi alma con la luz de la fe<br>
+      y haz que el recuerdo de este hermoso día<br>
+      perdure siempre en mí.
+    </p>
+    <p class="prayer-amen">Amén</p>
+    <div class="prayer-ornament">✦</div>
+  </section>
 
   <!-- ══ HORARIO ══ -->
   <section class="reveal">
@@ -130,6 +144,7 @@
       </div>
       <div class="family-card">
         <span class="role">Sus Padrinos</span>
+        <p class="godparents-phrase">«Los padrinos no se encuentran,<br>se eligen con el corazón»</p>
         <div class="names">
           Raúl Arias Romo<br>&amp;<br>
           Silvia Pedroza Cuéllar
@@ -172,6 +187,19 @@
     </p>
   </section>
 
+    <!-- ══ ORACIÓN FINAL ══ -->
+  <section class="prayer-section prayer-section--final reveal">
+    <div class="prayer-ornament">✦</div>
+    <p class="prayer-text">
+      Querido Jesús:<br><br>
+      Haz que la pureza que invade mi alma<br>
+      se funda junto a la tuya en un abrazo lleno de ternura,<br>
+      para que mis pequeños pasos de hoy<br>
+      crezcan en el futuro guiados<br>
+      por tu infinito amor…
+    </p>
+    <div class="prayer-ornament">✦</div>
+  </section>
   <!-- ══ RSVP ══ -->
   <div class="rsvp-section reveal">
     <div class="rsvp-inner">

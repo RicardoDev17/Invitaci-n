@@ -17,17 +17,18 @@ import {
   ref,
   push,
   onValue,
-  get
+  get,
+  update
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const firebaseConfig = {
-  apiKey:            "TU_API_KEY",
-  authDomain:        "TU_PROJECT_ID.firebaseapp.com",
-  databaseURL:       "https://TU_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId:         "TU_PROJECT_ID",
-  storageBucket:     "TU_PROJECT_ID.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId:             "TU_APP_ID"
+  apiKey:            "AIzaSyB_SWgmkMNh6FPhSdm9RUwfubTuKSZSpUM",
+  authDomain:        "invitacion-mario-97aa1.firebaseapp.com",
+  databaseURL:       "https://invitacion-mario-97aa1-default-rtdb.firebaseio.com",
+  projectId:         "invitacion-mario-97aa1",
+  storageBucket:     "invitacion-mario-97aa1.firebasestorage.app",
+  messagingSenderId: "474262868148",
+  appId:             "1:474262868148:web:39887666f3f579e58187e1"
 };
 
 const app      = initializeApp(firebaseConfig);
@@ -140,96 +141,37 @@ spawnExtraDove();
 
 
 // ══════════════════════════════════════════
-//  3. MÚSICA (Web Audio API — generativa)
+//  3. MÚSICA (song.mp3)
 // ══════════════════════════════════════════
 
-let audioCtx      = null;
-let musicNodes    = [];
-let isPlaying     = false;
-let scheduleTimer = null;
-
-function createHarmonicTone(actx, freq, startTime, duration, gain = 0.08) {
-  const osc      = actx.createOscillator();
-  const gainNode = actx.createGain();
-  const vibLFO   = actx.createOscillator();
-  const vibGain  = actx.createGain();
-
-  vibLFO.frequency.value = 5.2;
-  vibGain.gain.value     = freq * 0.003;
-  vibLFO.connect(vibGain);
-  vibGain.connect(osc.frequency);
-
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freq, startTime);
-  gainNode.gain.setValueAtTime(0, startTime);
-  gainNode.gain.linearRampToValueAtTime(gain, startTime + 0.25);
-  gainNode.gain.setValueAtTime(gain, startTime + duration - 0.3);
-  gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
-
-  osc.connect(gainNode);
-  gainNode.connect(actx.destination);
-  vibLFO.start(startTime); osc.start(startTime);
-  vibLFO.stop(startTime + duration); osc.stop(startTime + duration);
-
-  return { osc, gainNode, vibLFO };
-}
-
-const CHORD_PROG = [
-  [261.63, 329.63, 392.00, 523.25],
-  [349.23, 440.00, 523.25, 698.46],
-  [392.00, 493.88, 587.33, 783.99],
-  [329.63, 415.30, 493.88, 659.25],
-  [349.23, 440.00, 523.25, 698.46],
-  [261.63, 329.63, 392.00, 523.25],
-];
-let chordIndex = 0;
-
-function scheduleChord() {
-  if (!isPlaying || !audioCtx) return;
-  const now      = audioCtx.currentTime;
-  const chord    = CHORD_PROG[chordIndex % CHORD_PROG.length];
-  const duration = 3.2;
-  chord.forEach((freq, i) => {
-    const g = i === 0 ? 0.07 : (i === chord.length - 1 ? 0.045 : 0.055);
-    musicNodes.push(createHarmonicTone(audioCtx, freq, now, duration, g));
-  });
-  chordIndex++;
-  scheduleTimer = setTimeout(scheduleChord, (duration - 0.3) * 1000);
-}
-
-function startMusic() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  isPlaying  = true;
-  chordIndex = 0;
-  scheduleChord();
-}
-
-function stopMusic() {
-  isPlaying = false;
-  clearTimeout(scheduleTimer);
-  musicNodes.forEach(n => {
-    try { n.osc.stop();    } catch(e) {}
-    try { n.vibLFO.stop(); } catch(e) {}
-  });
-  musicNodes = [];
-}
-
+const bgAudio    = document.getElementById('bgAudio');
 const musicBtn   = document.getElementById('musicBtn');
 const musicIcon  = document.getElementById('musicIcon');
 const musicLabel = document.getElementById('musicLabel');
 
-musicBtn.addEventListener('click', () => {
-  if (isPlaying) {
-    stopMusic();
-    musicBtn.classList.remove('playing');
-    musicIcon.textContent  = '♪';
-    musicLabel.textContent = 'Música';
-  } else {
-    startMusic();
+bgAudio.volume = 0.7;
+
+function setPlayingUI(playing) {
+  if (playing) {
     musicBtn.classList.add('playing');
     musicIcon.textContent  = '■';
     musicLabel.textContent = 'Pausa';
+  } else {
+    musicBtn.classList.remove('playing');
+    musicIcon.textContent  = '♪';
+    musicLabel.textContent = 'Música';
+  }
+}
+
+bgAudio.play().then(() => setPlayingUI(true)).catch(() => setPlayingUI(false));
+
+musicBtn.addEventListener('click', () => {
+  if (bgAudio.paused) {
+    bgAudio.play();
+    setPlayingUI(true);
+  } else {
+    bgAudio.pause();
+    setPlayingUI(false);
   }
 });
 
@@ -297,8 +239,8 @@ document.getElementById('rsvpForm').addEventListener('submit', async function(e)
       return;
     }
 
-    // Guardar en Firebase
-    await push(RSVP_REF, { name, count, ts: new Date().toISOString() });
+    // Guardar en Firebase — count siempre como número
+    await push(RSVP_REF, { name, count: Number(count), ts: new Date().toISOString() });
 
     nameInput.value  = '';
     countInput.value = '1';
@@ -336,7 +278,7 @@ function burstPetals(n) {
 //  6. PANEL ADMIN — lee Firebase en tiempo real
 // ══════════════════════════════════════════
 
-const ADMIN_PASSWORD = 'mario2026'; // ← Cambia aquí tu contraseña
+const ADMIN_PASSWORD = 'mario2025'; // ← Cambia aquí tu contraseña
 let adminAuth        = false;
 let rsvpUnsubscribe  = null;
 
@@ -382,51 +324,178 @@ function showAdminPanel() {
   listenToRSVP();
 }
 
-/** Suscripción en tiempo real: la tabla se actualiza al instante cuando alguien confirma */
+/** Colores por número de mesa (1-12, luego se repite) */
+const TABLE_COLORS = [
+  '#3a5a8c', // 1 azul
+  '#c0392b', // 2 rojo
+  '#27ae60', // 3 verde
+  '#8e44ad', // 4 morado
+  '#e67e22', // 5 naranja
+  '#16a085', // 6 verde azulado
+  '#c0932b', // 7 dorado oscuro
+  '#d35400', // 8 terracota
+  '#2980b9', // 9 azul claro
+  '#6c3483', // 10 uva
+  '#1e8449', // 11 esmeralda
+  '#922b21', // 12 vino
+];
+
+function tableColor(n) {
+  if (!n || n < 1) return '#aaa';
+  return TABLE_COLORS[(n - 1) % TABLE_COLORS.length];
+}
+
+// Estado de filtros y búsqueda
+let adminList        = [];   // datos completos del snapshot
+let adminSortMode    = 'fecha-asc';
+let adminSearchQuery = '';
+
+/** Suscripción en tiempo real */
 function listenToRSVP() {
-  if (rsvpUnsubscribe) return; // ya está escuchando
+  if (rsvpUnsubscribe) { rsvpUnsubscribe(); rsvpUnsubscribe = null; }
 
   const wrap  = document.getElementById('guestListWrap');
   const badge = document.getElementById('totalBadge');
   wrap.innerHTML = '<div class="empty-state">Cargando confirmaciones…</div>';
 
+  // Inyectar barra de controles si no existe
+  if (!document.getElementById('adminControls')) {
+    const controls = document.createElement('div');
+    controls.id = 'adminControls';
+    controls.innerHTML = `
+      <div class="admin-controls-bar">
+        <input id="adminSearch" class="admin-search" type="text" placeholder="🔍 Buscar familia…">
+        <select id="adminSort" class="admin-sort">
+          <option value="fecha-asc">Fecha ↑ (antigua primero)</option>
+          <option value="fecha-desc">Fecha ↓ (reciente primero)</option>
+          <option value="mesa-asc">Mesa ↑ (menor primero)</option>
+          <option value="mesa-desc">Mesa ↓ (mayor primero)</option>
+          <option value="sin-mesa">Sin mesa asignada</option>
+        </select>
+      </div>`;
+    wrap.parentNode.insertBefore(controls, wrap);
+
+    document.getElementById('adminSearch').addEventListener('input', function() {
+      adminSearchQuery = this.value.toLowerCase().trim();
+      renderAdminTable();
+    });
+    document.getElementById('adminSort').addEventListener('change', function() {
+      adminSortMode = this.value;
+      renderAdminTable();
+    });
+  }
+
   rsvpUnsubscribe = onValue(RSVP_REF, snapshot => {
-    const list = [];
+    adminList = [];
     if (snapshot.exists()) {
-      snapshot.forEach(child => list.push({ id: child.key, ...child.val() }));
+      snapshot.forEach(child => {
+        const val = child.val();
+        adminList.push({
+          id:    child.key,
+          name:  val.name  || '',
+          count: parseInt(val.count, 10) || 0,
+          ts:    val.ts    || '',
+          mesa:  val.mesa  ? parseInt(val.mesa, 10) : null
+        });
+      });
     }
 
-    const total = list.reduce((s, x) => s + (x.count || 0), 0);
+    const total = adminList.reduce((s, x) => s + x.count, 0);
     badge.textContent = 'Total: ' + total + ' invitado' + (total !== 1 ? 's' : '');
-
-    if (list.length === 0) {
-      wrap.innerHTML = '<div class="empty-state">Aún no hay confirmaciones registradas.</div>';
-      return;
-    }
-
-    list.sort((a, b) => new Date(a.ts) - new Date(b.ts));
-
-    const rows = list.map((x, i) => {
-      const fecha = new Date(x.ts).toLocaleDateString('es-MX',
-        { day: '2-digit', month: 'short', year: 'numeric' });
-      return `<tr>
-        <td style="color:var(--brown-soft);font-family:'Lato',sans-serif;font-size:0.8rem;">${i + 1}</td>
-        <td>${escapeHtml(x.name || '')}</td>
-        <td><span class="guest-count">${x.count || 0}</span></td>
-        <td style="font-size:0.85rem;color:var(--text-mid);">${fecha}</td>
-      </tr>`;
-    }).join('');
-
-    wrap.innerHTML = `
-      <table class="guest-table">
-        <thead><tr><th>#</th><th>Familia</th><th>Asistentes</th><th>Fecha</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
+    renderAdminTable();
 
   }, error => {
     console.error('Firebase read error:', error);
     wrap.innerHTML = `<div class="empty-state" style="color:#c0392b;">
       Error al leer datos. Verifica la configuración de Firebase.</div>`;
+  });
+}
+
+function renderAdminTable() {
+  const wrap = document.getElementById('guestListWrap');
+
+  // Filtrar por búsqueda
+  let list = adminList.filter(x =>
+    x.name.toLowerCase().includes(adminSearchQuery)
+  );
+
+  // Filtrar sin mesa
+  if (adminSortMode === 'sin-mesa') {
+    list = list.filter(x => !x.mesa);
+  }
+
+  // Ordenar
+  if (adminSortMode === 'fecha-asc')   list.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  if (adminSortMode === 'fecha-desc')  list.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  if (adminSortMode === 'mesa-asc')    list.sort((a, b) => (a.mesa || 999) - (b.mesa || 999));
+  if (adminSortMode === 'mesa-desc')   list.sort((a, b) => (b.mesa || 0)   - (a.mesa || 0));
+
+  if (list.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">No se encontraron familias.</div>';
+    return;
+  }
+
+  const rows = list.map((x, i) => {
+    const fecha = x.ts
+      ? new Date(x.ts).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '—';
+    const color   = tableColor(x.mesa);
+    const mesaVal = x.mesa || '';
+    return `<tr>
+      <td class="td-num">${i + 1}</td>
+      <td class="td-name">${escapeHtml(x.name)}</td>
+      <td><span class="guest-count">${x.count}</span></td>
+      <td class="td-fecha">${fecha}</td>
+      <td class="td-mesa">
+        <div class="mesa-wrap">
+          ${x.mesa
+            ? `<span class="mesa-badge" style="background:${color}">Mesa ${x.mesa}</span>`
+            : `<span class="mesa-empty">—</span>`
+          }
+          <input  class="mesa-input" type="number" min="1" max="99"
+                  value="${mesaVal}" placeholder="#"
+                  data-id="${x.id}" data-current="${x.mesa || ''}">
+          <button class="mesa-save-btn" data-id="${x.id}"
+                  style="--mesa-color:${color}">
+            Guardar
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="guest-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Familia</th>
+          <th>Asist.</th>
+          <th>Fecha</th>
+          <th>Mesa</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  // Listeners de guardar mesa
+  wrap.querySelectorAll('.mesa-save-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const id    = this.dataset.id;
+      const input = wrap.querySelector(`.mesa-input[data-id="${id}"]`);
+      const val   = parseInt(input.value, 10);
+      if (!val || val < 1) return;
+
+      this.textContent = '…';
+      this.disabled    = true;
+      try {
+        await update(ref(db, 'confirmaciones/' + id), { mesa: val });
+      } catch(e) {
+        console.error(e);
+        this.textContent = 'Error';
+        this.disabled    = false;
+      }
+    });
   });
 }
 
@@ -450,7 +519,7 @@ document.getElementById('adminLogoutBtn').addEventListener('click', () => {
 // ══════════════════════════════════════════
 
 (function injectCountdown() {
-  const target = new Date('2025-06-20T12:00:00');
+  const target = new Date('2026-06-20T12:00:00');
   const diff   = target - new Date();
   if (diff <= 0) return;
   const days  = Math.floor(diff / 86400000);
