@@ -944,7 +944,7 @@ async function generarPDF(familyName, maxGuests, pageLink) {
   const H = 297;
 
 try {
-  const response = await fetch('/invitacion.jpg');
+  const response = await fetch('https://ricardodev17.github.io/Invitaci-n/invitacion.jpg');
   const blob = await response.blob();
 
   const base64 = await new Promise((resolve, reject) => {
