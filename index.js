@@ -18,7 +18,9 @@ import {
   push,
   onValue,
   get,
-  update
+  update,
+  set,
+  remove
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const firebaseConfig = {
@@ -31,9 +33,15 @@ const firebaseConfig = {
   appId:             "1:474262868148:web:39887666f3f579e58187e1"
 };
 
-const app      = initializeApp(firebaseConfig);
-const db       = getDatabase(app);
-const RSVP_REF = ref(db, 'confirmaciones');
+const app        = initializeApp(firebaseConfig);
+const db         = getDatabase(app);
+const RSVP_REF   = ref(db, 'confirmaciones');
+const FAMILY_REF = ref(db, 'familias');
+
+// ── Leer ?familia=ID de la URL para modo invitación personalizada ──
+const URL_PARAMS  = new URLSearchParams(window.location.search);
+const FAMILIA_ID  = URL_PARAMS.get('familia') || null;
+let   familiaData = null;   // se rellena si venimos con un ID
 
 
 // ══════════════════════════════════════════
@@ -239,10 +247,15 @@ document.getElementById('rsvpForm').addEventListener('submit', async function(e)
       return;
     }
 
-    // Guardar en Firebase — count siempre como número
-    await push(RSVP_REF, { name, count: Number(count), ts: new Date().toISOString() });
+    // Guardar en Firebase — incluye familiaId si venimos de link personalizado
+    const payload = { name, count: Number(count), ts: new Date().toISOString() };
+    if (FAMILIA_ID) payload.familiaId = FAMILIA_ID;
+    await push(RSVP_REF, payload);
 
-    nameInput.value  = '';
+    // Solo limpiar el campo nombre si NO venimos de link personalizado
+    if (!FAMILIA_ID) {
+      nameInput.value = '';
+    }
     countInput.value = '1';
     btn.disabled     = false;
     btn.textContent  = 'Confirmar Asistencia';
@@ -321,7 +334,9 @@ function checkPassword() {
 function showAdminPanel() {
   document.getElementById('adminLogin').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'block';
+  injectAdminTabs();
   listenToRSVP();
+  renderAdminView();
 }
 
 /** Colores por número de mesa (1-12, luego se repite) */
@@ -442,11 +457,11 @@ function renderAdminTable() {
     const color   = tableColor(x.mesa);
     const mesaVal = x.mesa || '';
     return `<tr>
-      <td class="td-num" data-label="#">${i + 1}</td>
-      <td class="td-name" data-label="Familia">${escapeHtml(x.name)}</td>
-      <td class="td-count" data-label="Asist."><span class="guest-count">${x.count}</span></td>
-      <td class="td-fecha" data-label="Fecha">${fecha}</td>
-      <td class="td-mesa" data-label="Mesa">
+      <td class="td-num">${i + 1}</td>
+      <td class="td-name">${escapeHtml(x.name)}</td>
+      <td><span class="guest-count">${x.count}</span></td>
+      <td class="td-fecha">${fecha}</td>
+      <td class="td-mesa">
         <div class="mesa-wrap">
           ${x.mesa
             ? `<span class="mesa-badge" style="background:${color}">Mesa ${x.mesa}</span>`
@@ -536,3 +551,635 @@ document.getElementById('adminLogoutBtn').addEventListener('click', () => {
     : '¡Es hoy! 🎉';
   badge.appendChild(el);
 })();
+
+
+// ══════════════════════════════════════════
+//  8. MODO FAMILIA PERSONALIZADA
+//  Si la URL trae ?familia=ID, cargamos los datos de Firebase
+//  y adaptamos el formulario de RSVP.
+// ══════════════════════════════════════════
+
+async function initFamiliaMode() {
+  if (!FAMILIA_ID) return;
+
+  try {
+    const snap = await get(ref(db, 'familias/' + FAMILIA_ID));
+    if (!snap.exists()) return;
+
+    familiaData = snap.val();
+    const maxGuests = familiaData.maxGuests || 10;
+    const famName   = familiaData.name      || '';
+
+    // Ocultar completamente el campo de nombre — no lo necesitan escribir
+    const nameGroup = document.getElementById('familyName')?.closest('.form-group');
+    if (nameGroup) nameGroup.style.display = 'none';
+
+    // Igual rellenar el value para que el submit lo tome
+    const nameInput = document.getElementById('familyName');
+    if (nameInput) nameInput.value = famName;
+
+    // Reconstruir el select limitado al máximo de invitados asignados
+    const countInput = document.getElementById('guestCount');
+    if (countInput) {
+      countInput.innerHTML = '';
+      for (let i = 1; i <= maxGuests; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i === 1 ? '1 persona' : `${i} personas`;
+        countInput.appendChild(opt);
+      }
+    }
+
+    // Cambiar label del select para que sea más claro
+    const countGroup = document.getElementById('guestCount')?.closest('.form-group');
+    if (countGroup) {
+      const lbl = countGroup.querySelector('label');
+      if (lbl) lbl.textContent = `¿Cuántos asistirán? (máximo ${maxGuests})`;
+    }
+
+    // Badge de bienvenida personalizado encima del formulario
+    const rsvpInner = document.querySelector('.rsvp-inner');
+    if (rsvpInner) {
+      const badge = document.createElement('div');
+      badge.style.cssText = `
+        background: rgba(201,168,76,0.12);
+        border: 1px solid rgba(201,168,76,0.35);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 1.1rem;
+        color: var(--gold-light);
+        line-height: 1.6;
+      `;
+      badge.innerHTML = `
+        Invitación reservada para<br>
+        <strong style="font-size:1.25rem;color:#fff">${famName}</strong><br>
+        <span style="font-size:0.82rem;opacity:0.75;font-style:normal;letter-spacing:0.08em;">
+          ${maxGuests} LUGAR${maxGuests !== 1 ? 'ES' : ''} ASIGNADO${maxGuests !== 1 ? 'S' : ''}
+        </span>`;
+      rsvpInner.insertBefore(badge, rsvpInner.querySelector('.rsvp-form'));
+    }
+
+  } catch(err) {
+    console.warn('No se pudo cargar datos de familia:', err);
+  }
+}
+
+initFamiliaMode();
+
+
+// ══════════════════════════════════════════
+//  9. PANEL ADMIN — GESTIÓN DE FAMILIAS
+//  Pestaña nueva en el modal de admin para
+//  registrar familias y sus cupos máximos.
+// ══════════════════════════════════════════
+
+let familiesUnsubscribe = null;
+let adminTab = 'confirmaciones'; // 'confirmaciones' | 'familias'
+
+/** Inyecta las pestañas en el modal admin (se llama una sola vez) */
+function injectAdminTabs() {
+  const panel = document.getElementById('adminPanel');
+  if (panel.querySelector('.admin-tabs')) return;
+
+  // Tabs
+  const tabBar = document.createElement('div');
+  tabBar.className = 'admin-tabs';
+  tabBar.innerHTML = `
+    <button class="admin-tab active" data-tab="confirmaciones">Confirmaciones</button>
+    <button class="admin-tab"        data-tab="familias">Familias invitadas</button>
+  `;
+  panel.insertBefore(tabBar, panel.firstChild);
+
+  tabBar.querySelectorAll('.admin-tab').forEach(btn => {
+    btn.addEventListener('click', function() {
+      tabBar.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      adminTab = this.dataset.tab;
+      renderAdminView();
+    });
+  });
+
+  // Contenedor que alterna entre las dos vistas
+  const viewWrap = document.createElement('div');
+  viewWrap.id = 'adminViewWrap';
+  panel.insertBefore(viewWrap, panel.querySelector('.guest-list-header'));
+}
+
+function renderAdminView() {
+  if (adminTab === 'confirmaciones') {
+    showConfirmacionesView();
+  } else {
+    showFamiliasView();
+  }
+}
+
+// ── Vista Confirmaciones (la original) ───────────────────────────
+function showConfirmacionesView() {
+  const viewWrap = document.getElementById('adminViewWrap');
+  viewWrap.innerHTML = '';
+
+  // Controles de búsqueda/sort (los reinsertamos aquí)
+  const controls = document.createElement('div');
+  controls.id = 'adminControls2';
+  controls.innerHTML = `
+    <div class="admin-controls-bar">
+      <input id="adminSearch2" class="admin-search" type="text" placeholder="🔍 Buscar familia…" value="${adminSearchQuery}">
+      <select id="adminSort2" class="admin-sort">
+        <option value="fecha-asc">Fecha ↑</option>
+        <option value="fecha-desc">Fecha ↓</option>
+        <option value="mesa-asc">Mesa ↑</option>
+        <option value="mesa-desc">Mesa ↓</option>
+        <option value="sin-mesa">Sin mesa</option>
+      </select>
+    </div>`;
+  viewWrap.appendChild(controls);
+
+  document.getElementById('adminSearch2').value = adminSearchQuery;
+  document.getElementById('adminSort2').value   = adminSortMode;
+
+  document.getElementById('adminSearch2').addEventListener('input', function() {
+    adminSearchQuery = this.value.toLowerCase().trim();
+    renderAdminTable();
+  });
+  document.getElementById('adminSort2').addEventListener('change', function() {
+    adminSortMode = this.value;
+    renderAdminTable();
+  });
+
+  const tableWrap = document.createElement('div');
+  tableWrap.id = 'guestListWrap2';
+  viewWrap.appendChild(tableWrap);
+
+  // redirigir guestListWrap a guestListWrap2
+  renderAdminTableIn('guestListWrap2');
+}
+
+// Versión de renderAdminTable que escribe en un contenedor específico
+function renderAdminTableIn(containerId) {
+  const wrap = document.getElementById(containerId) || document.getElementById('guestListWrap');
+  if (!wrap) return;
+
+  let list = adminList.filter(x => x.name.toLowerCase().includes(adminSearchQuery));
+  if (adminSortMode === 'sin-mesa') list = list.filter(x => !x.mesa);
+  if (adminSortMode === 'fecha-asc')  list.sort((a,b) => new Date(a.ts) - new Date(b.ts));
+  if (adminSortMode === 'fecha-desc') list.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+  if (adminSortMode === 'mesa-asc')   list.sort((a,b) => (a.mesa||999) - (b.mesa||999));
+  if (adminSortMode === 'mesa-desc')  list.sort((a,b) => (b.mesa||0)   - (a.mesa||0));
+
+  if (list.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">No se encontraron familias.</div>';
+    return;
+  }
+
+  const rows = list.map((x, i) => {
+    const fecha  = x.ts ? new Date(x.ts).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const color  = tableColor(x.mesa);
+    const mesaVal = x.mesa || '';
+    return `<tr>
+      <td class="td-num"  data-label="#">${i+1}</td>
+      <td class="td-name" data-label="Familia">${escapeHtml(x.name)}</td>
+      <td class="td-count" data-label="Asist."><span class="guest-count">${x.count}</span></td>
+      <td class="td-fecha" data-label="Fecha">${fecha}</td>
+      <td class="td-mesa"  data-label="Mesa">
+        <div class="mesa-wrap">
+          ${x.mesa ? `<span class="mesa-badge" style="background:${color}">Mesa ${x.mesa}</span>` : '<span class="mesa-empty">—</span>'}
+          <input class="mesa-input" type="number" min="1" max="99" value="${mesaVal}" placeholder="#" data-id="${x.id}" data-current="${x.mesa||''}">
+          <button class="mesa-save-btn" data-id="${x.id}" style="--mesa-color:${color}">Guardar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="guest-table">
+      <thead><tr><th>#</th><th>Familia</th><th>Asist.</th><th>Fecha</th><th>Mesa</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  wrap.querySelectorAll('.mesa-save-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const id    = this.dataset.id;
+      const input = wrap.querySelector(`.mesa-input[data-id="${id}"]`);
+      const val   = parseInt(input.value, 10);
+      if (!val || val < 1) return;
+      this.textContent = '…';
+      this.disabled    = true;
+      try {
+        await update(ref(db, 'confirmaciones/' + id), { mesa: val });
+      } catch(e) {
+        console.error(e);
+        this.textContent = 'Error';
+        this.disabled    = false;
+      }
+    });
+  });
+}
+
+// ── Vista Familias invitadas ──────────────────────────────────────
+let allFamilias = [];
+
+function showFamiliasView() {
+  const viewWrap = document.getElementById('adminViewWrap');
+  viewWrap.innerHTML = `
+    <div class="familias-add-form">
+      <input  id="famNameInput"   class="admin-search" type="text"   placeholder="Nombre de la familia" style="flex:2">
+      <input  id="famGuestsInput" class="admin-search" type="number" min="1" max="20" placeholder="Máx. invitados" style="flex:0.6;min-width:90px">
+      <button id="famAddBtn" class="mesa-save-btn" style="--mesa-color:#3a5a8c;padding:8px 16px">Agregar</button>
+    </div>
+    <div id="famListWrap" style="margin-top:12px"></div>`;
+
+  document.getElementById('famAddBtn').addEventListener('click', addFamilia);
+  document.getElementById('famNameInput').addEventListener('keydown', e => { if(e.key==='Enter') addFamilia(); });
+
+  listenToFamilias();
+}
+
+async function addFamilia() {
+  const nameEl   = document.getElementById('famNameInput');
+  const guestsEl = document.getElementById('famGuestsInput');
+  const name     = nameEl.value.trim();
+  const max      = parseInt(guestsEl.value, 10);
+
+  if (!name || !max || max < 1) return;
+
+  const famBtn = document.getElementById('famAddBtn');
+  famBtn.disabled = true;
+  famBtn.textContent = '…';
+
+  try {
+    const newRef = await push(FAMILY_REF, {
+      name,
+      maxGuests: max,
+      createdAt: new Date().toISOString()
+    });
+    nameEl.value   = '';
+    guestsEl.value = '';
+  } catch(e) {
+    console.error(e);
+    alert('Error al guardar. Revisa tu conexión.');
+  } finally {
+    famBtn.disabled    = false;
+    famBtn.textContent = 'Agregar';
+  }
+}
+
+function listenToFamilias() {
+  if (familiesUnsubscribe) { familiesUnsubscribe(); familiesUnsubscribe = null; }
+
+  familiesUnsubscribe = onValue(FAMILY_REF, snap => {
+    allFamilias = [];
+    if (snap.exists()) {
+      snap.forEach(child => {
+        allFamilias.push({ id: child.key, ...child.val() });
+      });
+    }
+    renderFamiliasTable();
+  });
+}
+
+const BASE_PAGE_URL = 'https://ricardodev17.github.io/Invitaci-n/';
+
+function renderFamiliasTable() {
+  const wrap = document.getElementById('famListWrap');
+  if (!wrap) return;
+
+  if (allFamilias.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">Aún no hay familias registradas.</div>';
+    return;
+  }
+
+  const rows = allFamilias.map((f, i) => {
+    const link = `${BASE_PAGE_URL}?familia=${f.id}`;
+    return `<tr>
+      <td class="td-num"  data-label="#">${i+1}</td>
+      <td class="td-name" data-label="Familia">${escapeHtml(f.name)}</td>
+      <td class="td-count" data-label="Máx."><span class="guest-count">${f.maxGuests}</span></td>
+      <td class="td-fecha" data-label="Link">
+        <a href="${link}" target="_blank" class="fam-link" title="${link}">Ver</a>
+        <button class="fam-copy-btn" data-link="${link}" title="Copiar link">📋</button>
+      </td>
+      <td data-label="PDF">
+        <button class="fam-pdf-btn" data-id="${f.id}" data-name="${f.name}" data-guests="${f.maxGuests}" data-link="${link}" title="Descargar PDF">⬇ PDF</button>
+      </td>
+      <td data-label="Eliminar">
+        <button class="fam-del-btn" data-id="${f.id}" title="Eliminar familia">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const total = allFamilias.reduce((s,f) => s + (f.maxGuests||0), 0);
+
+  wrap.innerHTML = `
+    <div class="guest-list-header" style="margin-bottom:10px">
+      <h3 style="font-family:'Cinzel',serif;font-size:0.95rem;font-weight:400">Familias registradas</h3>
+      <div class="total-badge">Total: ${total} lugares</div>
+    </div>
+    <div style="max-height:45vh;overflow-y:auto;border:1px solid rgba(201,168,76,0.2)">
+      <table class="guest-table">
+        <thead><tr><th>#</th><th>Familia</th><th>Máx.</th><th>Link</th><th>PDF</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  // Copiar link
+  wrap.querySelectorAll('.fam-copy-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      navigator.clipboard.writeText(this.dataset.link).then(() => {
+        const orig = this.textContent;
+        this.textContent = '✓';
+        setTimeout(() => { this.textContent = orig; }, 1500);
+      });
+    });
+  });
+
+  // Generar PDF
+  wrap.querySelectorAll('.fam-pdf-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const name   = this.dataset.name;
+      const guests = parseInt(this.dataset.guests, 10);
+      const link   = this.dataset.link;
+      generarPDF(name, guests, link);
+    });
+  });
+
+  // Eliminar familia
+  wrap.querySelectorAll('.fam-del-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const id = this.dataset.id;
+      const fam = allFamilias.find(f => f.id === id);
+      if (!fam) return;
+      if (!confirm(`¿Eliminar a "${fam.name}"?`)) return;
+      try {
+        await remove(ref(db, 'familias/' + id));
+      } catch(e) {
+        console.error(e);
+        alert('Error al eliminar.');
+      }
+    });
+  });
+}
+
+
+// ══════════════════════════════════════════
+//  10. GENERADOR DE PDF EN EL NAVEGADOR
+//  Usa jsPDF (cargado desde CDN en index.html)
+// ══════════════════════════════════════════
+
+function generarPDF(familyName, maxGuests, pageLink) {
+  // jsPDF se carga vía <script> en index.html
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const W = 210, H = 297;
+
+  // ── Paleta ────────────────────────────────────────────────────
+  const GOLD       = '#c9a84c';
+  const GOLD_PALE  = '#f5ecd0';
+  const BLUE       = '#3a5a8c';
+  const BLUE_LT    = '#7896c4';
+  const DARK       = '#2d2416';
+  const MID        = '#5a4a2a';
+  const IVORY      = '#faf7f0';
+
+  // ── Fondo marfil ──────────────────────────────────────────────
+  doc.setFillColor(250, 247, 240);
+  doc.rect(0, 0, W, H, 'F');
+
+  // Puntos decorativos sutiles
+  doc.setFillColor(232, 208, 138);
+  for (let row = 0; row < H; row += 14) {
+    for (let col = 0; col < W; col += 14) {
+      doc.circle(col, row, 0.35, 'F');
+    }
+  }
+
+  // ── Marco dorado doble ────────────────────────────────────────
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.8);
+  doc.rect(8, 8, W - 16, H - 16);
+  doc.setLineWidth(0.3);
+  doc.rect(11, 11, W - 22, H - 22);
+
+  // Esquinas decorativas (pequeñas cruces)
+  const corners = [[8,8],[202,8],[8,289],[202,289]];
+  doc.setLineWidth(0.5);
+  corners.forEach(([cx, cy]) => {
+    doc.line(cx - 4, cy, cx + 4, cy);
+    doc.line(cx, cy - 4, cx, cy + 4);
+  });
+
+  // ── Cruz superior ─────────────────────────────────────────────
+  doc.setFillColor(201, 168, 76);
+  doc.rect(103.5, 16, 3, 14, 'F');   // vertical
+  doc.rect(98,    20, 14, 3,  'F');  // horizontal
+
+  // ── "Con la gracia de Dios" ───────────────────────────────────
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text('✦  CON LA GRACIA DE DIOS  ✦', W / 2, 35, { align: 'center' });
+
+  // Línea ornamental
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.3);
+  doc.line(25, 38, 99, 38);
+  doc.setFillColor(201, 168, 76);
+  doc.rect(103, 36.5, 4, 4, 'F');   // rombo simulado (cuadrado rotado)
+  doc.line(111, 38, 185, 38);
+
+  // ── "Tengo el honor…" ─────────────────────────────────────────
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Tengo el honor de invitarle a celebrar', W / 2, 47, { align: 'center' });
+
+  // ── Nombre del niño ───────────────────────────────────────────
+  doc.setTextColor(58, 90, 140);
+  doc.setFontSize(26);
+  doc.setFont('helvetica', 'bolditalic');
+  doc.text('Mario Alejandro', W / 2, 63, { align: 'center' });
+
+  // Línea bajo nombre
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.3);
+  doc.line(30, 67, W - 30, 67);
+
+  // ── "Mi" dorado ───────────────────────────────────────────────
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'italic');
+  doc.text('✦   Mi   ✦', W / 2, 76, { align: 'center' });
+
+  // ── Título ────────────────────────────────────────────────────
+  doc.setTextColor(45, 36, 22);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sagrada Primera', W / 2, 88, { align: 'center' });
+  doc.text('Comunión', W / 2, 99, { align: 'center' });
+
+  // Estrellas decorativas
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text('✦  ✦  ✦  ✦  ✦', W / 2, 106, { align: 'center' });
+
+  // ── Badge de fecha ────────────────────────────────────────────
+  const bx = 70, by = 109, bw = 70, bh = 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(bx, by, bw, bh, 2, 2, 'FD');
+
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('20', W / 2, 122, { align: 'center' });
+
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('J U N I O', W / 2, 128, { align: 'center' });
+
+  doc.setFontSize(6.5);
+  doc.setTextColor(122, 96, 64);
+  doc.text('2 0 2 6', W / 2, 133, { align: 'center' });
+
+  // ── Separador ─────────────────────────────────────────────────
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.3);
+  doc.line(18, 142, W - 18, 142);
+
+  doc.setTextColor(120, 150, 196);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  doc.text('P R O G R A M A  D E L  D Í A', W / 2, 148, { align: 'center' });
+
+  // ── Ceremonia ─────────────────────────────────────────────────
+  doc.setFillColor(58, 90, 140);
+  doc.rect(18, 150, W - 36, 8, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('  12:00 PM  ·  Ceremonia Religiosa', 20, 155.5);
+
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Santuario de la Virgen de Guadalupe · Santa Misa de Primera Comunión', W / 2, 163, { align: 'center' });
+
+  // ── Festejo ───────────────────────────────────────────────────
+  doc.setFillColor(201, 168, 76);
+  doc.rect(18, 166, W - 36, 8, 'F');
+  doc.setTextColor(45, 36, 22);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('  2:30 PM  ·  Recepción & Festejo', 20, 171.5);
+
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Salón La Puerta · San Judas Tadeo #204, Col. Las Flores (Ciudad Perdida)', W / 2, 179, { align: 'center' });
+
+  // ── Familia y padrinos ────────────────────────────────────────
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.3);
+  doc.line(18, 183, W - 18, 183);
+
+  doc.setTextColor(120, 150, 196);
+  doc.setFontSize(6);
+  doc.text('C O N  E L  A M O R  D E', W / 2, 189, { align: 'center' });
+
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('María Guadalupe Arias Romo  &  Mario Alberto Pérez Aguirre', W / 2, 195, { align: 'center' });
+
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Padrinos: Raúl Arias Romo  &  Silvia Pedroza Cuéllar', W / 2, 201, { align: 'center' });
+
+  // ── Oración ───────────────────────────────────────────────────
+  doc.setFillColor(245, 236, 208);
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(18, 205, W - 36, 32, 2, 2, 'FD');
+
+  const prayerLines = [
+    'Jesús mío, que hoy vienes a mí por primera vez,',
+    'ilumina mi alma con la luz de la fe',
+    'y haz que el recuerdo de este hermoso día',
+    'perdure siempre en mí.',
+  ];
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'italic');
+  prayerLines.forEach((line, i) => {
+    doc.text(line, W / 2, 213 + i * 6, { align: 'center' });
+  });
+  doc.setTextColor(201, 168, 76);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('Amén', W / 2, 235, { align: 'center' });
+
+  // ── Sección personalizada ─────────────────────────────────────
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.3);
+  doc.line(18, 241, W - 18, 241);
+
+  doc.setTextColor(120, 150, 196);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  doc.text('I N V I T A C I Ó N  E S P E C I A L  P A R A', W / 2, 247, { align: 'center' });
+
+  doc.setTextColor(58, 90, 140);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(familyName, W / 2, 256, { align: 'center' });
+
+  const guestLabel = maxGuests === 1
+    ? 'Lugar reservado: 1 persona'
+    : `Lugares reservados: ${maxGuests} personas`;
+  doc.setTextColor(45, 36, 22);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(guestLabel, W / 2, 262, { align: 'center' });
+
+  // ── Botón de link ─────────────────────────────────────────────
+  doc.setFillColor(58, 90, 140);
+  doc.roundedRect(18, 266, W - 36, 16, 3, 3, 'F');
+
+  doc.setTextColor(160, 184, 216);
+  doc.setFontSize(6.5);
+  doc.text('Confirma tu asistencia en:', W / 2, 271.5, { align: 'center' });
+
+  doc.setTextColor(232, 208, 138);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text(pageLink, W / 2, 278, { align: 'center' });
+
+  // Link clicable
+  doc.link(18, 266, W - 36, 16, { url: pageLink });
+
+  // ── Footer ────────────────────────────────────────────────────
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'italic');
+  doc.text(
+    '"Dejad que los niños vengan a mí, porque de ellos es el Reino de los Cielos."',
+    W / 2, 287, { align: 'center' }
+  );
+  doc.setTextColor(90, 74, 42);
+  doc.setFontSize(5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text('MARIO ALEJANDRO  ·  PRIMERA COMUNIÓN  ·  20 DE JUNIO 2026', W / 2, 292, { align: 'center' });
+
+  // ── Descargar ─────────────────────────────────────────────────
+  const safeName = familyName
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_');
+  doc.save(`Invitacion_${safeName}.pdf`);
+}
