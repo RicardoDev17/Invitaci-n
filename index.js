@@ -943,21 +943,22 @@ async function generarPDF(familyName, maxGuests, pageLink) {
   const W = 210;
   const H = 297;
 
-  try {
-    const img = new Image();
-    img.src = '/invitacion.jpg';
+try {
+  const response = await fetch('/invitacion.jpg');
+  const blob = await response.blob();
 
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-    });
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 
-    // fondo completo
-    doc.addImage(img, 'JPEG', 0, 0, W, H);
+  doc.addImage(base64, 'JPEG', 0, 0, W, H);
 
-  } catch (err) {
-    console.error('No se pudo cargar invitación.jpg', err);
-  }
+} catch (err) {
+  console.error('No se pudo cargar invitacion.jpg', err);
+}
 
   // ─────────────────────────────
   // NOMBRE DE FAMILIA
