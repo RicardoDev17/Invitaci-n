@@ -98,7 +98,15 @@ class Petal {
     ctx.globalAlpha = this.opacity;
     ctx.fillStyle   = this.color;
     ctx.beginPath();
-    ctx.ellipse(0, 0, this.size, this.size * 0.45, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      canvas.width / 2,
+      canvas.height / 2,
+      235,
+      335,
+      0,
+      0,
+      Math.PI * 2
+    );
     ctx.fill();
     ctx.restore();
   }
@@ -923,263 +931,71 @@ function renderFamiliasTable() {
 }
 
 
-// ══════════════════════════════════════════
-//  10. GENERADOR DE PDF EN EL NAVEGADOR
-//  Usa jsPDF (cargado desde CDN en index.html)
-// ══════════════════════════════════════════
-
-function generarPDF(familyName, maxGuests, pageLink) {
-  // jsPDF se carga vía <script> en index.html
+async function generarPDF(familyName, maxGuests, pageLink) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  const W = 210, H = 297;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
 
-  // ── Paleta ────────────────────────────────────────────────────
-  const GOLD       = '#c9a84c';
-  const GOLD_PALE  = '#f5ecd0';
-  const BLUE       = '#3a5a8c';
-  const BLUE_LT    = '#7896c4';
-  const DARK       = '#2d2416';
-  const MID        = '#5a4a2a';
-  const IVORY      = '#faf7f0';
+  const W = 210;
+  const H = 297;
 
-  // ── Fondo marfil ──────────────────────────────────────────────
-  doc.setFillColor(250, 247, 240);
-  doc.rect(0, 0, W, H, 'F');
+  try {
+    const img = new Image();
+    img.src = '/invitacion.jpg';
 
-  // Puntos decorativos sutiles
-  doc.setFillColor(232, 208, 138);
-  for (let row = 0; row < H; row += 14) {
-    for (let col = 0; col < W; col += 14) {
-      doc.circle(col, row, 0.35, 'F');
-    }
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+
+    // fondo completo
+    doc.addImage(img, 'JPEG', 0, 0, W, H);
+
+  } catch (err) {
+    console.error('No se pudo cargar invitación.jpg', err);
   }
 
-  // ── Marco dorado doble ────────────────────────────────────────
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.8);
-  doc.rect(8, 8, W - 16, H - 16);
-  doc.setLineWidth(0.3);
-  doc.rect(11, 11, W - 22, H - 22);
-
-  // Esquinas decorativas (pequeñas cruces)
-  const corners = [[8,8],[202,8],[8,289],[202,289]];
-  doc.setLineWidth(0.5);
-  corners.forEach(([cx, cy]) => {
-    doc.line(cx - 4, cy, cx + 4, cy);
-    doc.line(cx, cy - 4, cx, cy + 4);
-  });
-
-  // ── Cruz superior ─────────────────────────────────────────────
-  doc.setFillColor(201, 168, 76);
-  doc.rect(103.5, 16, 3, 14, 'F');   // vertical
-  doc.rect(98,    20, 14, 3,  'F');  // horizontal
-
-  // ── "Con la gracia de Dios" ───────────────────────────────────
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text('✦  CON LA GRACIA DE DIOS  ✦', W / 2, 35, { align: 'center' });
-
-  // Línea ornamental
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.3);
-  doc.line(25, 38, 99, 38);
-  doc.setFillColor(201, 168, 76);
-  doc.rect(103, 36.5, 4, 4, 'F');   // rombo simulado (cuadrado rotado)
-  doc.line(111, 38, 185, 38);
-
-  // ── "Tengo el honor…" ─────────────────────────────────────────
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'italic');
-  doc.text('Tengo el honor de invitarle a celebrar', W / 2, 47, { align: 'center' });
-
-  // ── Nombre del niño ───────────────────────────────────────────
+  // ─────────────────────────────
+  // NOMBRE DE FAMILIA
+  // ─────────────────────────────
   doc.setTextColor(58, 90, 140);
-  doc.setFontSize(26);
-  doc.setFont('helvetica', 'bolditalic');
-  doc.text('Mario Alejandro', W / 2, 63, { align: 'center' });
+  doc.setFont('times', 'bolditalic');
+  doc.setFontSize(35);
+  doc.text(familyName, W / 2, 260, { align: 'center' });
 
-  // Línea bajo nombre
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.3);
-  doc.line(30, 67, W - 30, 67);
+  // ─────────────────────────────
+  // PASES
+  // ─────────────────────────────
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(16);
+  doc.text(String(maxGuests + " pases"), W / 2, 270, { align: 'center' });
 
-  // ── "Mi" dorado ───────────────────────────────────────────────
-  doc.setTextColor(201, 168, 76);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'italic');
-  doc.text('✦   Mi   ✦', W / 2, 76, { align: 'center' });
+    const btnX = 42;
+    const btnY = 275;
+    const btnW = 126;
+    const btnH = 15;
 
-  // ── Título ────────────────────────────────────────────────────
-  doc.setTextColor(45, 36, 22);
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Sagrada Primera', W / 2, 88, { align: 'center' });
-  doc.text('Comunión', W / 2, 99, { align: 'center' });
-
-  // Estrellas decorativas
-  doc.setTextColor(201, 168, 76);
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.text('✦  ✦  ✦  ✦  ✦', W / 2, 106, { align: 'center' });
-
-  // ── Badge de fecha ────────────────────────────────────────────
-  const bx = 70, by = 109, bw = 70, bh = 28;
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.6);
-  doc.roundedRect(bx, by, bw, bh, 2, 2, 'FD');
-
-  doc.setTextColor(201, 168, 76);
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('20', W / 2, 122, { align: 'center' });
-
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text('J U N I O', W / 2, 128, { align: 'center' });
-
-  doc.setFontSize(6.5);
-  doc.setTextColor(122, 96, 64);
-  doc.text('2 0 2 6', W / 2, 133, { align: 'center' });
-
-  // ── Separador ─────────────────────────────────────────────────
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.3);
-  doc.line(18, 142, W - 18, 142);
-
-  doc.setTextColor(120, 150, 196);
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'normal');
-  doc.text('P R O G R A M A  D E L  D Í A', W / 2, 148, { align: 'center' });
-
-  // ── Ceremonia ─────────────────────────────────────────────────
   doc.setFillColor(58, 90, 140);
-  doc.rect(18, 150, W - 36, 8, 'F');
+  doc.roundedRect(btnX, btnY, btnW, btnH, 3, 3, 'F');
+
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('  12:00 PM  ·  Ceremonia Religiosa', 20, 155.5);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(12);
+  doc.text('CONFIRMA AQUÍ', W / 2, btnY + 9.7, { align: 'center' });
 
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Santuario de la Virgen de Guadalupe · Santa Misa de Primera Comunión', W / 2, 163, { align: 'center' });
-
-  // ── Festejo ───────────────────────────────────────────────────
-  doc.setFillColor(201, 168, 76);
-  doc.rect(18, 166, W - 36, 8, 'F');
-  doc.setTextColor(45, 36, 22);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('  2:30 PM  ·  Recepción & Festejo', 20, 171.5);
-
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Salón La Puerta · San Judas Tadeo #204, Col. Las Flores (Ciudad Perdida)', W / 2, 179, { align: 'center' });
-
-  // ── Familia y padrinos ────────────────────────────────────────
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.3);
-  doc.line(18, 183, W - 18, 183);
-
-  doc.setTextColor(120, 150, 196);
-  doc.setFontSize(6);
-  doc.text('C O N  E L  A M O R  D E', W / 2, 189, { align: 'center' });
-
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text('María Guadalupe Arias Romo  &  Mario Alberto Pérez Aguirre', W / 2, 195, { align: 'center' });
-
-  doc.setTextColor(201, 168, 76);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'italic');
-  doc.text('Padrinos: Raúl Arias Romo  &  Silvia Pedroza Cuéllar', W / 2, 201, { align: 'center' });
-
-  // ── Oración ───────────────────────────────────────────────────
-  doc.setFillColor(245, 236, 208);
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(18, 205, W - 36, 32, 2, 2, 'FD');
-
-  const prayerLines = [
-    'Jesús mío, que hoy vienes a mí por primera vez,',
-    'ilumina mi alma con la luz de la fe',
-    'y haz que el recuerdo de este hermoso día',
-    'perdure siempre en mí.',
-  ];
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'italic');
-  prayerLines.forEach((line, i) => {
-    doc.text(line, W / 2, 213 + i * 6, { align: 'center' });
+  doc.link(btnX, btnY, btnW, btnH, {
+    url: pageLink
   });
-  doc.setTextColor(201, 168, 76);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('Amén', W / 2, 235, { align: 'center' });
 
-  // ── Sección personalizada ─────────────────────────────────────
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.3);
-  doc.line(18, 241, W - 18, 241);
-
-  doc.setTextColor(120, 150, 196);
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'normal');
-  doc.text('I N V I T A C I Ó N  E S P E C I A L  P A R A', W / 2, 247, { align: 'center' });
-
-  doc.setTextColor(58, 90, 140);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text(familyName, W / 2, 256, { align: 'center' });
-
-  const guestLabel = maxGuests === 1
-    ? 'Lugar reservado: 1 persona'
-    : `Lugares reservados: ${maxGuests} personas`;
-  doc.setTextColor(45, 36, 22);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text(guestLabel, W / 2, 262, { align: 'center' });
-
-  // ── Botón de link ─────────────────────────────────────────────
-  doc.setFillColor(58, 90, 140);
-  doc.roundedRect(18, 266, W - 36, 16, 3, 3, 'F');
-
-  doc.setTextColor(160, 184, 216);
-  doc.setFontSize(6.5);
-  doc.text('Confirma tu asistencia en:', W / 2, 271.5, { align: 'center' });
-
-  doc.setTextColor(232, 208, 138);
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'bold');
-  doc.text(pageLink, W / 2, 278, { align: 'center' });
-
-  // Link clicable
-  doc.link(18, 266, W - 36, 16, { url: pageLink });
-
-  // ── Footer ────────────────────────────────────────────────────
-  doc.setTextColor(201, 168, 76);
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'italic');
-  doc.text(
-    '"Dejad que los niños vengan a mí, porque de ellos es el Reino de los Cielos."',
-    W / 2, 287, { align: 'center' }
-  );
-  doc.setTextColor(90, 74, 42);
-  doc.setFontSize(5.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text('MARIO ALEJANDRO  ·  PRIMERA COMUNIÓN  ·  20 DE JUNIO 2026', W / 2, 292, { align: 'center' });
-
-  // ── Descargar ─────────────────────────────────────────────────
   const safeName = familyName
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '_');
+
   doc.save(`Invitacion_${safeName}.pdf`);
 }
