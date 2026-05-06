@@ -574,7 +574,7 @@ async function initFamiliaMode() {
     const countGroup = document.getElementById('guestCount')?.closest('.form-group');
     if (countGroup) {
       const lbl = countGroup.querySelector('label');
-      if (lbl) lbl.textContent = `¿Cuántos asistirán? (máximo ${maxGuests})`;
+      if (lbl) lbl.textContent = `¿Cuántos asistirán?`;
     }
 
     // Badge de bienvenida personalizado encima del formulario
