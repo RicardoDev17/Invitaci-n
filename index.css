@@ -482,7 +482,7 @@ section {
   letter-spacing: 0.35em;
   text-transform: uppercase;
   color: var(--blue-light);
-  font-weight: 300;
+  font-weight: 700;
   margin-bottom: 10px;
   display: block;
 }
@@ -1072,20 +1072,21 @@ footer p {
 .prayer-section {
   text-align: center;
   padding: 52px 28px 44px;
-  background: linear-gradient(180deg, rgba(201,168,76,0.04) 0%, transparent 100%);
-  border-top: 1px solid rgba(201,168,76,0.15);
-  border-bottom: 1px solid rgba(201,168,76,0.15);
+  background: linear-gradient(160deg, #1e2d4a 0%, #26396a 55%, #1c2d50 100%);
+  border-top: 2px solid rgba(201,168,76,0.4);
+  border-bottom: 2px solid rgba(201,168,76,0.4);
+  position: relative;
 }
 
 .prayer-section--final {
   margin-top: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(201,168,76,0.05) 100%);
+  background: linear-gradient(160deg, #1c2d50 0%, #243360 55%, #1a2844 100%);
 }
 
 .prayer-ornament {
-  color: var(--gold);
+  color: var(--gold-light);
   font-size: 1rem;
-  opacity: 0.6;
+  opacity: 0.9;
   margin: 10px 0;
   letter-spacing: 0.3em;
 }
@@ -1094,21 +1095,24 @@ footer p {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
   font-size: clamp(1rem, 3.2vw, 1.25rem);
-  font-weight: 300;
+  font-weight: 600;
   line-height: 2;
-  color: var(--text-mid);
+  color: rgba(255, 248, 230, 0.95);
   max-width: 520px;
   margin: 16px auto;
   letter-spacing: 0.02em;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.35);
 }
 
 .prayer-amen {
   font-family: 'Cinzel', serif;
   font-size: 0.95rem;
+  font-weight: 700;
   letter-spacing: 0.35em;
-  color: var(--gold);
+  color: var(--gold-light);
   margin: 6px 0 14px;
   text-transform: uppercase;
+  text-shadow: 0 1px 8px rgba(201,168,76,0.5);
 }
 
 /* Frase padrinos */
@@ -1116,6 +1120,7 @@ footer p {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
   font-size: 1.05rem;
+  font-weight: 700;
   color: var(--blue-sacred);
   opacity: 1;
   margin: 8px 0 16px;
@@ -1326,6 +1331,3 @@ footer p {
 }
 .fam-pdf-btn:hover  { background: var(--gold-light); transform: scale(1.04); }
 .fam-pdf-btn:active { transform: scale(0.97); }
-
-
-/*Holas*/
