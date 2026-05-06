@@ -226,11 +226,10 @@ document.getElementById('rsvpForm').addEventListener('submit', async function(e)
 
   const nameInput  = document.getElementById('familyName');
   const countInput = document.getElementById('guestCount');
-  const name       = nameInput.value.trim();
+  // Si no hay nombre (modo sin familia), usar un genérico
+  const name       = nameInput.value.trim() || 'Invitado';
   const count      = parseInt(countInput.value, 10);
   const btn        = document.querySelector('.btn-confirm');
-
-  if (!name) return;
 
   btn.disabled    = true;
   btn.textContent = 'Guardando…';
@@ -342,6 +341,18 @@ function checkPassword() {
 function showAdminPanel() {
   document.getElementById('adminLogin').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'block';
+
+  // Ocultar el contenedor original del HTML para que no duplique la tabla
+  const oldWrap = document.getElementById('guestListWrap');
+  if (oldWrap) {
+    oldWrap.style.display = 'none';
+    // Ocultar también el encabezado "Familias Confirmadas" y el badge que están antes
+    const listHeader = oldWrap.previousElementSibling;
+    if (listHeader && listHeader.classList.contains('guest-list-header')) {
+      listHeader.style.display = 'none';
+    }
+  }
+
   injectAdminTabs();
   listenToRSVP();
   renderAdminView();
@@ -373,40 +384,11 @@ let adminList        = [];   // datos completos del snapshot
 let adminSortMode    = 'fecha-asc';
 let adminSearchQuery = '';
 
-/** Suscripción en tiempo real */
+/** Suscripción en tiempo real — solo datos, la UI la maneja el sistema de tabs */
 function listenToRSVP() {
   if (rsvpUnsubscribe) { rsvpUnsubscribe(); rsvpUnsubscribe = null; }
 
-  const wrap  = document.getElementById('guestListWrap');
   const badge = document.getElementById('totalBadge');
-  wrap.innerHTML = '<div class="empty-state">Cargando confirmaciones…</div>';
-
-  // Inyectar barra de controles si no existe
-  if (!document.getElementById('adminControls')) {
-    const controls = document.createElement('div');
-    controls.id = 'adminControls';
-    controls.innerHTML = `
-      <div class="admin-controls-bar">
-        <input id="adminSearch" class="admin-search" type="text" placeholder="🔍 Buscar familia…">
-        <select id="adminSort" class="admin-sort">
-          <option value="fecha-asc">Fecha ↑ (antigua primero)</option>
-          <option value="fecha-desc">Fecha ↓ (reciente primero)</option>
-          <option value="mesa-asc">Mesa ↑ (menor primero)</option>
-          <option value="mesa-desc">Mesa ↓ (mayor primero)</option>
-          <option value="sin-mesa">Sin mesa asignada</option>
-        </select>
-      </div>`;
-    wrap.parentNode.insertBefore(controls, wrap);
-
-    document.getElementById('adminSearch').addEventListener('input', function() {
-      adminSearchQuery = this.value.toLowerCase().trim();
-      renderAdminTable();
-    });
-    document.getElementById('adminSort').addEventListener('change', function() {
-      adminSortMode = this.value;
-      renderAdminTable();
-    });
-  }
 
   rsvpUnsubscribe = onValue(RSVP_REF, snapshot => {
     adminList = [];
@@ -424,20 +406,21 @@ function listenToRSVP() {
     }
 
     const total = adminList.reduce((s, x) => s + x.count, 0);
-    badge.textContent = 'Total: ' + total + ' invitado' + (total !== 1 ? 's' : '');
+    if (badge) badge.textContent = 'Total: ' + total + ' invitado' + (total !== 1 ? 's' : '');
     renderAdminTable();
 
   }, error => {
     console.error('Firebase read error:', error);
-    wrap.innerHTML = `<div class="empty-state" style="color:#c0392b;">
-      Error al leer datos. Verifica la configuración de Firebase.</div>`;
+    const wrap = document.getElementById('guestListWrap2');
+    if (wrap) wrap.innerHTML = '<div class="empty-state" style="color:#c0392b;">Error al leer datos. Verifica la configuración de Firebase.</div>';
   });
 }
 
 function renderAdminTable() {
-  const wrap = document.getElementById('guestListWrap');
+  // Usar el contenedor activo según la vista de tabs
+  const wrap = document.getElementById('guestListWrap2') || document.getElementById('guestListWrap');
+  if (!wrap) return;
 
-  // Filtrar por búsqueda
   let list = adminList.filter(x =>
     x.name.toLowerCase().includes(adminSearchQuery)
   );
@@ -637,6 +620,13 @@ async function initFamiliaMode() {
 
 initFamiliaMode();
 
+// Ocultar siempre el campo de nombre de familia en el formulario RSVP
+// (el nombre se toma automáticamente de la URL ?familia=ID, o se usa genérico)
+(function hideNameField() {
+  const nameGroup = document.getElementById('familyName')?.closest('.form-group');
+  if (nameGroup) nameGroup.style.display = 'none';
+})();
+
 
 // ══════════════════════════════════════════
 //  9. PANEL ADMIN — GESTIÓN DE FAMILIAS
@@ -696,17 +686,14 @@ function showConfirmacionesView() {
     <div class="admin-controls-bar">
       <input id="adminSearch2" class="admin-search" type="text" placeholder="🔍 Buscar familia…" value="${adminSearchQuery}">
       <select id="adminSort2" class="admin-sort">
-        <option value="fecha-asc">Fecha ↑</option>
-        <option value="fecha-desc">Fecha ↓</option>
-        <option value="mesa-asc">Mesa ↑</option>
-        <option value="mesa-desc">Mesa ↓</option>
-        <option value="sin-mesa">Sin mesa</option>
+        <option value="fecha-asc"  ${adminSortMode==='fecha-asc'  ? 'selected':''}>Fecha ↑</option>
+        <option value="fecha-desc" ${adminSortMode==='fecha-desc' ? 'selected':''}>Fecha ↓</option>
+        <option value="mesa-asc"   ${adminSortMode==='mesa-asc'   ? 'selected':''}>Mesa ↑</option>
+        <option value="mesa-desc"  ${adminSortMode==='mesa-desc'  ? 'selected':''}>Mesa ↓</option>
+        <option value="sin-mesa"   ${adminSortMode==='sin-mesa'   ? 'selected':''}>Sin mesa</option>
       </select>
     </div>`;
   viewWrap.appendChild(controls);
-
-  document.getElementById('adminSearch2').value = adminSearchQuery;
-  document.getElementById('adminSort2').value   = adminSortMode;
 
   document.getElementById('adminSearch2').addEventListener('input', function() {
     adminSearchQuery = this.value.toLowerCase().trim();
