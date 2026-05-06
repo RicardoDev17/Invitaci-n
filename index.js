@@ -72,7 +72,7 @@ class Petal {
   reset(initial = false) {
     this.x           = Math.random() * canvas.width;
     this.y           = initial ? Math.random() * canvas.height * -1 : -20;
-    this.size        = Math.random() * 7 + 4;
+    this.size        = Math.random() * 3 + 2;
     this.speedY      = Math.random() * 0.8 + 0.3;
     this.speedX      = (Math.random() - 0.5) * 0.6;
     this.angle       = Math.random() * Math.PI * 2;
@@ -98,15 +98,7 @@ class Petal {
     ctx.globalAlpha = this.opacity;
     ctx.fillStyle   = this.color;
     ctx.beginPath();
-    ctx.ellipse(
-      canvas.width / 2,
-      canvas.height / 2,
-      235,
-      335,
-      0,
-      0,
-      Math.PI * 2
-    );
+    ctx.ellipse(0, 0, this.size, this.size * 1.6, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -340,6 +332,17 @@ function checkPassword() {
 function showAdminPanel() {
   document.getElementById('adminLogin').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'block';
+
+  // Ocultar contenedor original para evitar tabla duplicada
+  const oldWrap = document.getElementById('guestListWrap');
+  if (oldWrap) {
+    oldWrap.style.display = 'none';
+    const listHeader = oldWrap.previousElementSibling;
+    if (listHeader && listHeader.classList.contains('guest-list-header')) {
+      listHeader.style.display = 'none';
+    }
+  }
+
   injectAdminTabs();
   listenToRSVP();
   renderAdminView();
@@ -371,40 +374,11 @@ let adminList        = [];   // datos completos del snapshot
 let adminSortMode    = 'fecha-asc';
 let adminSearchQuery = '';
 
-/** Suscripción en tiempo real */
+/** Suscripción en tiempo real — solo datos, la UI la maneja el sistema de tabs */
 function listenToRSVP() {
   if (rsvpUnsubscribe) { rsvpUnsubscribe(); rsvpUnsubscribe = null; }
 
-  const wrap  = document.getElementById('guestListWrap');
   const badge = document.getElementById('totalBadge');
-  wrap.innerHTML = '<div class="empty-state">Cargando confirmaciones…</div>';
-
-  // Inyectar barra de controles si no existe
-  if (!document.getElementById('adminControls')) {
-    const controls = document.createElement('div');
-    controls.id = 'adminControls';
-    controls.innerHTML = `
-      <div class="admin-controls-bar">
-        <input id="adminSearch" class="admin-search" type="text" placeholder="🔍 Buscar familia…">
-        <select id="adminSort" class="admin-sort">
-          <option value="fecha-asc">Fecha ↑ (antigua primero)</option>
-          <option value="fecha-desc">Fecha ↓ (reciente primero)</option>
-          <option value="mesa-asc">Mesa ↑ (menor primero)</option>
-          <option value="mesa-desc">Mesa ↓ (mayor primero)</option>
-          <option value="sin-mesa">Sin mesa asignada</option>
-        </select>
-      </div>`;
-    wrap.parentNode.insertBefore(controls, wrap);
-
-    document.getElementById('adminSearch').addEventListener('input', function() {
-      adminSearchQuery = this.value.toLowerCase().trim();
-      renderAdminTable();
-    });
-    document.getElementById('adminSort').addEventListener('change', function() {
-      adminSortMode = this.value;
-      renderAdminTable();
-    });
-  }
 
   rsvpUnsubscribe = onValue(RSVP_REF, snapshot => {
     adminList = [];
@@ -422,18 +396,18 @@ function listenToRSVP() {
     }
 
     const total = adminList.reduce((s, x) => s + x.count, 0);
-    badge.textContent = 'Total: ' + total + ' invitado' + (total !== 1 ? 's' : '');
+    if (badge) badge.textContent = 'Total: ' + total + ' invitado' + (total !== 1 ? 's' : '');
     renderAdminTable();
 
   }, error => {
     console.error('Firebase read error:', error);
-    wrap.innerHTML = `<div class="empty-state" style="color:#c0392b;">
-      Error al leer datos. Verifica la configuración de Firebase.</div>`;
+    const wrap = document.getElementById('guestListWrap2');
+    if (wrap) wrap.innerHTML = '<div class="empty-state" style="color:#c0392b;">Error al leer datos.</div>';
   });
 }
 
 function renderAdminTable() {
-  const wrap = document.getElementById('guestListWrap');
+  const wrap = document.getElementById('guestListWrap2') || document.getElementById('guestListWrap');
 
   // Filtrar por búsqueda
   let list = adminList.filter(x =>
@@ -700,17 +674,14 @@ function showConfirmacionesView() {
     <div class="admin-controls-bar">
       <input id="adminSearch2" class="admin-search" type="text" placeholder="🔍 Buscar familia…" value="${adminSearchQuery}">
       <select id="adminSort2" class="admin-sort">
-        <option value="fecha-asc">Fecha ↑</option>
-        <option value="fecha-desc">Fecha ↓</option>
-        <option value="mesa-asc">Mesa ↑</option>
-        <option value="mesa-desc">Mesa ↓</option>
-        <option value="sin-mesa">Sin mesa</option>
+        <option value="fecha-asc"  \${adminSortMode==='fecha-asc'  ?'selected':''}>Fecha ↑</option>
+        <option value="fecha-desc" \${adminSortMode==='fecha-desc' ?'selected':''}>Fecha ↓</option>
+        <option value="mesa-asc"   \${adminSortMode==='mesa-asc'   ?'selected':''}>Mesa ↑</option>
+        <option value="mesa-desc"  \${adminSortMode==='mesa-desc'  ?'selected':''}>Mesa ↓</option>
+        <option value="sin-mesa"   \${adminSortMode==='sin-mesa'   ?'selected':''}>Sin mesa</option>
       </select>
     </div>`;
   viewWrap.appendChild(controls);
-
-  document.getElementById('adminSearch2').value = adminSearchQuery;
-  document.getElementById('adminSort2').value   = adminSortMode;
 
   document.getElementById('adminSearch2').addEventListener('input', function() {
     adminSearchQuery = this.value.toLowerCase().trim();
