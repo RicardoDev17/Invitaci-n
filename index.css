@@ -495,6 +495,37 @@ section {
   line-height: 1.6;
 }
 
+
+/* ─── FOTO MARIO ─── */
+.photo-section {
+  padding: 40px 24px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.photo-oval-wrap {
+  position: relative;
+  width: clamp(220px, 55vw, 320px);
+  aspect-ratio: 3 / 4;
+  border-radius: 50%;
+  /* Marco exterior azul */
+  box-shadow:
+    0 0 0 7px #2b3fa0,
+    0 0 0 11px #c9a84c,
+    0 0 0 16px #2b3fa0,
+    0 0 32px rgba(58,90,140,0.35);
+  overflow: hidden;
+}
+
+.photo-oval-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
 /* ─── MAPA ─── */
 .map-container {
   background: white;
