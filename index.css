@@ -1,9 +1,6 @@
 /* ════════════════════════════════════════
    index.css · Primera Comunión Mario Alejandro
    ════════════════════════════════════════ */
-.fecha{
-  color: white;
-}
 /* ─── VARIABLES ─── */
 :root {
   --gold:        #c9a84c;
@@ -1488,5 +1485,7 @@ footer p {
   color: var(--text-dark);
   letter-spacing: 0.04em;
 }
+
+/*cAMBIO*/
 
 
