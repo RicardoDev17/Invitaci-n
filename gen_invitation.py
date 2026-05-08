@@ -288,7 +288,7 @@ def generate_invitation(family_name: str, max_guests: int, family_id: str, out_p
 
     # ── Link / QR placeholder ─────────────────────────────────────
     y -= 28
-    lw, lh = W - 100, 42
+    lw, lh = W - 100, 58
     lx = 50
     cv.setFillColor(BLUE)
     cv.roundRect(lx, y - lh + 12, lw, lh, 5, fill=1, stroke=0)
@@ -300,6 +300,11 @@ def generate_invitation(family_name: str, max_guests: int, family_id: str, out_p
     cv.setFont("Helvetica-Bold", 8)
     cv.setFillColor(GOLD_LIGHT)
     cv.drawCentredString(W/2, y - 18, url)
+
+    # Aviso fecha límite — dentro del botón azul
+    cv.setFont("Helvetica-BoldOblique", 7)
+    cv.setFillColor(HexColor('#ffd980'))
+    cv.drawCentredString(W/2, y - 34, "📅  Fecha límite para confirmar:  1 de Junio de 2026")
 
     # Hacer el botón clicable
     link_rect(cv, url, lx, y - lh + 12, lw, lh)

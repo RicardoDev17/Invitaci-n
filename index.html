@@ -41,6 +41,15 @@
   <!-- ══ AUDIO LOCAL ══ -->
   <audio id="bgAudio" src="song.mp3" loop preload="auto"></audio>
 
+  <!-- ══ BOTÓN FLOTANTE CONFIRMAR ══ -->
+  <a href="#rsvpForm" id="rsvpFloatBtn" title="Confirmar asistencia">
+    <span class="rsvp-float-icon">✉</span>
+    <span class="rsvp-float-text">
+      <span class="rsvp-float-label">Confirmar Asistencia</span>
+      <span class="rsvp-float-deadline">Fecha límite: 1 de Junio</span>
+    </span>
+  </a>
+
   <!-- ══ CONTROL DE MÚSICA ══ -->
   <button id="musicBtn" title="Reproducir/Pausar música">
     <span id="musicIcon">♪</span>
@@ -215,6 +224,15 @@
       <span class="section-label rsvp-label">Confirmación de asistencia</span>
       <h2 class="section-title rsvp-title">¿Nos acompañas?</h2>
       <div class="gold-rule rsvp-rule"></div>
+
+      <!-- AVISO FECHA LÍMITE -->
+      <div class="rsvp-deadline-notice">
+        <span class="rsvp-deadline-icon">📅</span>
+        <div>
+          <strong>Fecha límite para confirmar:</strong>
+          <span class="fecha" style="color: white;">1 de Junio de 2026</span>
+        </div>
+      </div>
 
       <form class="rsvp-form" id="rsvpForm">
         <div class="form-group">
